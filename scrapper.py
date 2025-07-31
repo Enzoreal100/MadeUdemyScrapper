@@ -1,14 +1,32 @@
 import time
+import csv
 import os
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import pyautogui as auto
 import pyperclip as clip
 import ast
+import dotenv
+
+dotenv.load_dotenv()
+
 auto.PAUSE = 0.7
+CONSOLE_COORDS_X = 3048
+CONSOLE_COORDS_Y = 2105
+QUESTIONS_SCROOL_X = 759
+QUESTIONS_SCROOL_Y = 492
+SELECT_ANSWER_X = 1563
+SELECT_ANSWER_Y = 760
+SUBMIT_ANSWER_X = 2044
+SUBMIT_ANSWER_Y = 1825
+GOOGLE_PROJECT_ID = os.environ.get("GOOGLE_PROJECT_ID"),
+GOOGLE_PRIVATE_KEY = os.environ.get("GOOGLE_PRIVATE_KEY")
+GOOGLE_CLIENT_EMAIL = os.environ.get("GOOGLE_CLIENT_EMAIL")
+file = 'questions.csv'
+
 
 def get_question_title():
-    auto.moveTo(x=7816, y=2570)
+    auto.moveTo(CONSOLE_COORDS_X, CONSOLE_COORDS_Y)
     auto.click()
     clip.copy("copy(document.getElementById('question-prompt').innerText)")
     auto.hotkey('ctrl','v')
@@ -17,7 +35,7 @@ def get_question_title():
 
 
 def get_answers(type):
-    auto.moveTo(x=7816, y=2570)
+    auto.moveTo(x=CONSOLE_COORDS_X, y=CONSOLE_COORDS_Y)
     auto.click()
     clip.copy(type)
     auto.hotkey('ctrl', 'v')
@@ -37,12 +55,10 @@ def print_question(dic):
 def put_answers(right_answers, wrong_answers, skipped_answers):
     i=0
     for ans in right_answers:
-        print(question['answer'][f'answer{i}'])
         question['answer'][f'answer{i}'] = [ans, True]
         i+=1
 
     for ansNew in wrong_answers + skipped_answers:
-        print(question['answer'][f'answer{i}'])
         question['answer'][f'answer{i}'] = [ansNew, False]
         i+=1
     return
@@ -50,7 +66,7 @@ def put_answers(right_answers, wrong_answers, skipped_answers):
 
 def jump_to_next_question():
     i = 0
-    auto.click(x=5878, y=963)
+    auto.click(QUESTIONS_SCROOL_X, QUESTIONS_SCROOL_Y)
     auto.press('tab')
     auto.press('tab')
     auto.press('enter')
@@ -71,56 +87,30 @@ question = {
 
 
 def random_answer():
-    auto.click(x=6589, y=1196)
-    auto.click(x=7197, y=2307)
+    auto.click(SELECT_ANSWER_X, SELECT_ANSWER_Y)
+    auto.click(SUBMIT_ANSWER_X, SUBMIT_ANSWER_Y)
     return
 
 
 def append_to_sheet(question):
-    SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-
-    credentials_dict = {
-        "type": "service_account",
-        "project_id": os.environ.get("GOOGLE_PROJECT_ID"),
-        "private_key": os.environ.get("GOOGLE_PRIVATE_KEY").replace('\\n', '\n'),
-        "client_email": os.environ.get("GOOGLE_CLIENT_EMAIL"),
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "universe_domain": "googleapis.com"
-    }
-
-    creds = service_account.Credentials.from_service_account_info(
-        credentials_dict, 
-        scopes=SCOPES
-    )
-    service = build('sheets', 'v4', credentials=creds)
-    SPREADSHEET_ID = os.environ.get("FOLDER")
-    RANGE_NAME = 'Sheet7!A:F'  # Ajuste conforme necessário
-    # Prepara os dados para inserção
-    values = [[
+    new_line = [
+        'teste',
         question['title'],
-        str(question['answer']['answer0']),
-        str(question['answer']['answer1']),
-        str(question['answer']['answer2']),
-        str(question['answer']['answer3']),
-        str(question['answer']['answer4'])
-    ]]
+    ]
 
-    body = {
-        'values': values,
-        'majorDimension': 'ROWS'
-    }
+    for key in question['answer'].keys():
+        if question['answer'][key] == []:
+            break
+        new_line.append(question['answer'][key][0])
+    new_line.append('testeCorreta')
+    new_line.append('testeTipo')
 
-    # Append na planilha
-    request = service.spreadsheets().values().append(
-        spreadsheetId=SPREADSHEET_ID,
-        range=RANGE_NAME,
-        valueInputOption='RAW',
-        insertDataOption='INSERT_ROWS',
-        body=body
-    )
-    return request.execute()
+    values = new_line
+
+
+    with open(file, 'a', newline='', encoding='utf=8') as file_csv:
+        writer = csv.writer(file_csv)
+        writer.writerow(values)
     
 
 
@@ -130,7 +120,6 @@ wrong_answers = get_answers("copy(Array.from(document.querySelectorAll('.answer-
 skipped_answers = get_answers("copy(Array.from(document.querySelectorAll('.answer-result-pane--answer-skipped--1NDPn .answer-result-pane--answer-body--cDGY6 .ud-heading-md.rt-scaffolding')).map(el => el.innerText))")
 put_answers(right_answers, wrong_answers, skipped_answers)
 jump_to_next_question()
-print_question(question)
+# print_question(question)
 append_to_sheet(question)
 #random_answer()
-
