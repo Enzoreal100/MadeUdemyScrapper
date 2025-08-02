@@ -87,6 +87,57 @@ The CSV file contains:
 - **Timing Problems**: Increase sleep delays if actions happen too fast
 - **Browser Console**: Ensure developer tools are open and console is accessible
 
+## Project Structure
+
+### Core Files
+
+#### `scrapper.py`
+The main automation script that performs the Udemy test scraping. Contains 11 functions:
+
+- `get_question_title()` - Extracts question text using browser console
+- `get_answers(type)` - Executes JavaScript to get answer options
+- `print_question(dic)` - Displays question data to console
+- `put_answers(right_answers, wrong_answers, skipped_answers)` - Populates question dictionary
+- `jump_to_next_question()` - Clicks submit button
+- `random_answer()` - Selects and submits random answer
+- `test_right_answers(question)` - Formats correct answers
+- `test_type(question)` - Determines single/multiple choice
+- `append_to_sheet(question, i)` - Writes data to CSV
+- `end_test()` - Completes test and starts new one
+- `import_to_sheets()` - Imports CSV to Google Sheets
+
+#### `calibrate.py`
+Utility script for finding screen coordinates:
+```python
+import time
+import pyautogui as auto
+
+time.sleep(3)
+pos = auto.position()
+print(pos)
+```
+Run this script and move your mouse to UI elements to get their coordinates for the main script.
+
+### Configuration Files
+
+#### `requirements.txt`
+Project dependencies:
+```
+pyautogui
+pyperclip
+python-dotenv
+```
+
+### Output Files
+
+#### `questions.csv`
+Generated CSV file containing extracted question data with columns:
+- Question number
+- Question title
+- Answer options (multiple columns)
+- Correct answers
+- Question type
+
 ## Disclaimer
 
 This tool is for educational purposes. Ensure compliance with Udemy's terms of service and applicable laws when using automated scraping tools.
